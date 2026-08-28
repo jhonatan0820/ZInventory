@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reportes · Inventorio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./InformationGeneral.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <div id="sidebarBackdrop" class="sidebar-backdrop" aria-hidden="true"></div>
+
+  <aside id="sidebar" class="sidebar" aria-label="Navegación principal">
+    <div class="sidebar-header">
+      <svg class="sidebar-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 7 12 3 4 7v10l8 4 8-4V7z"/>
+        <path d="M4 7l8 4 8-4"/>
+        <path d="M12 11v10"/>
+      </svg>
+      <div class="sidebar-brand">
+        <strong>Inventorio</strong>
+        <small>Dotaciones Zambrano</small>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="sidebar-section">General</div>
+      <a href="./inventario.html" class="nav-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7 12 3 4 7v10l8 4 8-4V7z"/><path d="M4 7l8 4 8-4"/></svg>
+        Inventario
+      </a>
+      <a href="./InformationGeneral.html" class="nav-link active" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 4 4 5-6"/></svg>
+        Reportes
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="avatar" aria-hidden="true">U</div>
+      <div class="sidebar-user">
+        <strong>Usuario</strong>
+        <small>Sesión activa</small>
+      </div>
+      <button type="button" class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Cambiar tema"></button>
+      <a href="./inventario.html" class="btn btn-ghost btn-icon" title="Volver al inventario" aria-label="Volver al inventario">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      </a>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <button class="hamburger" id="btnHamburger" aria-label="Abrir menú" aria-controls="sidebar" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-title">Reportes</div>
+    </div>
+
+    <header class="page-header">
+      <div class="page-header-row">
+        <div class="page-title-block">
+          <h1>Reporte de inventario</h1>
+          <p>Filtra por categoría, género, producto, talla o estilo y descarga los resultados.</p>
+        </div>
+        <div class="page-actions">
+          <a class="btn btn-secondary" href="./inventario.html" id="btnVolver">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+            <span class="volver-texto">Volver al inventario</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-body contenido">
+      <!-- FILTROS -->
+      <section class="filtros" aria-label="Filtros del reporte">
+        <h2 class="titulo-filtros">Filtros de búsqueda</h2>
+
+        <div class="filtro">
+          <label for="filtroCategoria">Categoría</label>
+          <select id="filtroCategoria">
+            <option value="">Todas</option>
+          </select>
+        </div>
+
+        <div class="filtro">
+          <label for="filtroGenero">Género</label>
+          <select id="filtroGenero">
+            <option value="">Ninguno</option>
+          </select>
+        </div>
+
+        <div class="filtro">
+          <label for="filtroProducto">Producto</label>
+          <select id="filtroProducto">
+            <option value="">Todos</option>
+          </select>
+        </div>
+
+        <div class="filtro filtro-talla">
+          <label for="filtroTalla">Talla</label>
+          <select id="filtroTalla" disabled>
+            <option value="">Talla</option>
+          </select>
+          <small id="hintTalla" class="hint-talla is-waiting is-hidden">Primero elige categoría y género para habilitar este filtro.</small>
+        </div>
+
+        <div class="filtro">
+          <label for="filtroEstilo">Estilo</label>
+          <select id="filtroEstilo">
+            <option value="">Todos</option>
+          </select>
+        </div>
+
+        <button id="btnGenerar" type="button">Generar reporte</button>
+      </section>
+
+      <!-- TABLE AREA -->
+      <div class="table-area">
+        <div class="progress" id="progressBar" aria-hidden="true">
+          <div class="bar"></div>
+        </div>
+        <div class="table-wrapper" id="tableWrapper">
+          <table>
+            <thead>
+              <tr id="thead"></tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TOP BAR -->
+      <div class="top-bar">
+        <span id="totalRegistros" class="muted"></span>
+        <button id="btnDescargar" type="button" disabled>
+          Descargar
+        </button>
+      </div>
+
+      <!-- TOTALES -->
+      <section class="totales" aria-label="Totales">
+        <div class="total-card">
+          <span>Total cantidad</span>
+          <strong id="totalCantidad">0</strong>
+        </div>
+        <div class="total-card">
+          <span>Total valor</span>
+          <strong id="totalValor">$0</strong>
+        </div>
+      </section>
+
+      <div id="error" class="error" role="alert" aria-live="polite"></div>
+    </main>
+  </div>
+</div>
+
+<script src="./config.js"></script>
+<script src="./theme.js"></script>
+<script src="./ui.js"></script>
+<script src="./InformationGeneral.js"></script>
+<script>
+  // Sidebar mobile
+  (function () {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    const btn = document.getElementById('btnHamburger');
+    if (!sidebar || !btn) return;
+    const open = () => {
+      sidebar.classList.add('is-open');
+      backdrop.classList.add('is-open');
+      btn.setAttribute('aria-expanded', 'true');
+    };
+    const close = () => {
+      sidebar.classList.remove('is-open');
+      backdrop.classList.remove('is-open');
+      btn.setAttribute('aria-expanded', 'false');
+    };
+    btn.addEventListener('click', () => {
+      sidebar.classList.contains('is-open') ? close() : open();
+    });
+    backdrop.addEventListener('click', close);
+    sidebar.querySelectorAll('.nav-link').forEach(a => a.addEventListener('click', close));
+  })();
+</script>
+</body>
+</html>

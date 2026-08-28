@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Resumen General</title>
+  <style>
+    @page { size: A4; margin: 16mm 12mm; }
+    body { margin: 0; padding: 0; background: #eef3f8; color: #162033;
+           font-family: Arial, Helvetica, sans-serif; font-size: 11px; line-height: 1.4; }
+    .report { width: 100%; }
+    .accent-line { height: 6px; margin-bottom: 10px; background: #0f9bd7; }
+    .card { margin-bottom: 12px; padding: 12px 14px; border: 1px solid #d5dde8; background: #ffffff; }
+    .header-table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+    .header-table td { vertical-align: top; padding: 0; border: none; }
+    .logo-cell { width: 92px; padding-right: 16px; }
+    .logo-box { width: 76px; height: 76px; border: 1px solid #d5dde8;
+                background: #f7fafc; text-align: center; vertical-align: middle; }
+    .logo-box img { width: 76px; height: auto; max-height: 76px; }
+    .logo-fallback { font-size: 11px; color: #64748b; padding-top: 30px; }
+    .report-title { margin: 0 0 4px 0; font-size: 11px; font-weight: bold;
+                    letter-spacing: 1px; text-transform: uppercase; color: #0f9bd7; }
+    .company-row { margin: 0 0 4px 0; padding-bottom: 6px; border-bottom: 1px solid #e6edf5; }
+    .company-row strong { display: block; margin-bottom: 2px; font-size: 22px; font-weight: bold; }
+    .company-name { font-size: 12px; color: #5d6c80; }
+    .meta-line { margin: 0 0 3px 0; color: #5d6c80; }
+    .meta-line strong { color: #162033; }
+    .filters-title { margin: 0 0 8px 0; font-size: 12px; font-weight: bold; }
+    .filters-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .filters-table td { width: 50%; padding: 0 6px 8px 0; border: none; vertical-align: top; }
+    .filters-table td.right { padding: 0 0 8px 6px; }
+    .filter-box { padding: 8px 10px; border: 1px solid #dbe4ee; background: #f8fafc; }
+    .filter-label { margin: 0 0 3px 0; font-size: 9px; font-weight: bold;
+                    letter-spacing: 0.8px; text-transform: uppercase; color: #7b8a9d; }
+    .filter-value { margin: 0; font-size: 12px; font-weight: bold; color: #162033; }
+    .totals-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 12px; }
+    .totals-table td { width: 50%; padding: 0 5px 0 0; border: none; vertical-align: top; }
+    .totals-table td.last { padding: 0 0 0 5px; }
+    .total-box { padding: 0; border: 1px solid #d5dde8; background: #ffffff; }
+    .total-bar { height: 4px; background: #0f9bd7; }
+    .total-content { padding: 10px 12px 12px 12px; }
+    .total-label { display: block; margin-bottom: 5px; font-size: 10px; font-weight: bold;
+                   text-transform: uppercase; letter-spacing: 0.7px; color: #7b8a9d; }
+    .total-value { font-size: 24px; font-weight: bold; color: #162033; }
+    .table-card { padding: 0; overflow: hidden; }
+    .table-header { padding: 10px 12px; border-bottom: 1px solid #dbe4ee; background: #f8fafc; }
+    .table-title { margin: 0 0 2px 0; font-size: 12px; font-weight: bold; }
+    .table-subtitle { margin: 0; font-size: 10px; color: #6b7a8d; }
+    table.report-table { width: 100%; border-collapse: collapse; }
+    table.report-table th, table.report-table td { border: 1px solid #dbe4ee;
+                                                    padding: 7px 9px; text-align: left; vertical-align: top; }
+    table.report-table th { background: #edf4fa; font-size: 10px; font-weight: bold; color: #405065; }
+    .empty { padding: 18px 12px; text-align: center; color: #64748b; }
+  </style>
+</head>
+<body>
+  <div class="report">
+    <div class="accent-line"></div>
+
+    <div class="card">
+      <table class="header-table">
+        <tr>
+          <td class="logo-cell">
+            <div class="logo-box">
+              <img th:if="${empresa_logo != null and empresa_logo != ''}"
+                   th:src="${empresa_logo}" alt="Logo"/>
+              <div th:unless="${empresa_logo != null and empresa_logo != ''}"
+                   class="logo-fallback">LOGO</div>
+            </div>
+          </td>
+          <td>
+            <p class="report-title">Resumen general</p>
+            <p class="company-row">
+              <strong th:text="${empresa_nombre != null ? empresa_nombre : 'Nombre de la empresa'}">Empresa</strong>
+              <span class="company-name">Reporte consolidado de inventario</span>
+            </p>
+            <p class="meta-line"><strong>Direccion:</strong>
+              <span th:text="${empresa_direccion != null ? empresa_direccion : 'Direccion'}">-</span></p>
+            <p class="meta-line"><strong>Celular:</strong>
+              <span th:text="${empresa_celular != null ? empresa_celular : 'Celular'}">-</span></p>
+            <p class="meta-line"><strong>Fecha:</strong>
+              <span th:text="${fecha_generacion != null ? fecha_generacion : 'Sin fecha'}">-</span></p>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <p class="filters-title">Filtros aplicados</p>
+      <table class="filters-table">
+        <tr th:each="entry, iterStat : ${filtros}" th:if="${iterStat.index % 2 == 0}">
+          <td>
+            <div class="filter-box">
+              <p class="filter-label" th:text="${entry.key}">Label</p>
+              <p class="filter-value" th:text="${entry.value != null ? entry.value : 'Todos'}">Todos</p>
+            </div>
+          </td>
+          <td class="right" th:with="siguiente=${iterStat.index + 1 < filtros.size() ? filtros.entrySet().toArray()[iterStat.index + 1] : null}">
+            <div class="filter-box" th:if="${siguiente != null}">
+              <p class="filter-label" th:text="${siguiente.key}">Label</p>
+              <p class="filter-value" th:text="${siguiente.value != null ? siguiente.value : 'Todos'}">Todos</p>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <table class="totals-table">
+      <tr>
+        <td>
+          <div class="total-box">
+            <div class="total-bar"></div>
+            <div class="total-content">
+              <span class="total-label">Cantidad total</span>
+              <span class="total-value" th:text="${cantidad_total != null ? cantidad_total : '0'}">0</span>
+            </div>
+          </div>
+        </td>
+        <td class="last">
+          <div class="total-box">
+            <div class="total-bar"></div>
+            <div class="total-content">
+              <span class="total-label">Valor total</span>
+              <span class="total-value" th:text="${valor_total != null ? valor_total : '$ 0'}">$ 0</span>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <div class="card table-card" th:if="${filas != null and !filas.isEmpty()}">
+      <div class="table-header">
+        <p class="table-title">Detalle del resumen</p>
+        <p class="table-subtitle">
+          <span th:text="${filas.size()}">0</span> registros generados
+        </p>
+      </div>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th th:each="columna : ${columnas}" th:text="${columna}">Col</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="fila : ${filas}">
+            <td th:each="columna : ${columnas}"
+                th:text="${fila.get(columna) != null ? fila.get(columna) : 'N/A'}">-</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" th:if="${filas == null or filas.isEmpty()}">
+      <div class="empty">No hay datos para este resumen.</div>
+    </div>
+  </div>
+</body>
+</html>

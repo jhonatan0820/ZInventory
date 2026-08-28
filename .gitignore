@@ -1,0 +1,28 @@
+# === Secretos ===
+backend-java/config/application-secrets.yml
+
+# === Java / Maven ===
+backend-java/target/
+*.class
+*.jar
+*.war
+*.log
+
+# === IDE ===
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# === Sistema ===
+.DS_Store
+Thumbs.db
+
+# === Python (residual del backend antiguo) ===
+__pycache__/
+*.pyc
+.venv/
+venv/
+node_modules/

@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: inventorio
+  # Carga adicional del archivo de secretos desde ./config (dentro de backend-java).
+  # El archivo config/application-secrets.yml esta en .gitignore.
+  config:
+    import:
+      - "optional:file:./config/application-secrets.yml"
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    cache: false
+
+server:
+  port: ${PORT:8081}
+  # Cookies de sesion compatibles con el Front (cross-site)
+  servlet:
+    session:
+      cookie:
+        name: SESSION
+        same-site: none
+        secure: true
+        http-only: true
+        path: /
+      timeout: 7d
+  forward-headers-strategy: framework
+
+# CORS orígenes permitidos (equivalente al setup de Flask-CORS)
+app:
+  # Base URL del frontend, usada para el enlace de recuperacion en el correo.
+  reset-base-url: ${RESET_BASE_URL:http://localhost:8081}
+  cors:
+    allowed-origins:
+      - https://dotacioneszambrano.com
+      - https://www.dotacioneszambrano.com
+      - http://127.0.0.1:5500
+      - http://localhost:8081
+  # Datos de la empresa para el reporte PDF (no sensibles)
+  report:
+    company-name: ${REPORT_COMPANY_NAME:Nombre de la empresa}
+    company-logo: ${REPORT_COMPANY_LOGO:}
+    company-address: ${REPORT_COMPANY_ADDRESS:Direccion de la empresa}
+    company-phone: ${REPORT_COMPANY_PHONE:Numero de celular}
+
+# Configuracion de logging basica
+logging:
+  level:
+    root: INFO
+    com.dotacioneszambrano.inventorio: INFO

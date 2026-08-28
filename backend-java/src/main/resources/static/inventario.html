@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventario · Dotaciones Zambrano</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- Global loading overlay (usado por apiFetch en inventario.js) -->
+<div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
+  <div class="loading-box">
+    <div class="spinner" aria-hidden="true"></div>
+    <div>Cargando…</div>
+  </div>
+</div>
+
+<!-- App shell: sidebar + main -->
+<div class="app-shell">
+
+  <!-- Sidebar backdrop (mobile) -->
+  <div id="sidebarBackdrop" class="sidebar-backdrop" aria-hidden="true"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="sidebar" aria-label="Navegación principal">
+    <div class="sidebar-header">
+      <svg class="sidebar-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 7 12 3 4 7v10l8 4 8-4V7z"/>
+        <path d="M4 7l8 4 8-4"/>
+        <path d="M12 11v10"/>
+      </svg>
+      <div class="sidebar-brand">
+        <strong>Inventorio</strong>
+        <small>Dotaciones Zambrano</small>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="sidebar-section">General</div>
+      <a href="./inventario.html" class="nav-link active" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7 12 3 4 7v10l8 4 8-4V7z"/><path d="M4 7l8 4 8-4"/></svg>
+        Inventario
+      </a>
+      <a href="./InformationGeneral.html" class="nav-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 4 4 5-6"/></svg>
+        Reportes
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="avatar" id="userAvatar" aria-hidden="true">U</div>
+      <div class="sidebar-user">
+        <strong id="userName">Usuario</strong>
+        <small>Sesión activa</small>
+      </div>
+      <button type="button" class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Cambiar tema"></button>
+      <button id="btnLogout" class="btn btn-ghost btn-icon" onclick="logout()" title="Cerrar sesión" aria-label="Cerrar sesión">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main-content">
+    <div class="topbar">
+      <button class="hamburger" id="btnHamburger" aria-label="Abrir menú" aria-controls="sidebar" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-title">Inventario</div>
+    </div>
+
+    <header class="page-header">
+      <div class="page-header-row">
+        <div class="page-title-block">
+          <h1>Inventario</h1>
+          <p>Gestiona productos, variantes y stock en tiempo real.</p>
+        </div>
+        <div class="page-actions">
+          <div class="search-input">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="searchInput" class="input" type="search" placeholder="Buscar por marca, estilo, color o talla…" aria-label="Buscar producto">
+          </div>
+          <button id="btnDelete" class="btn btn-danger-soft" type="button">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+            Eliminar
+          </button>
+          <button id="btnCancelDelete" class="btn btn-ghost" type="button" style="display:none;">Cancelar</button>
+          <button id="btnNew" class="btn btn-primary" type="button">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuevo producto
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-body">
+      <!-- KPIs -->
+      <section class="kpi-grid" aria-label="Indicadores">
+        <div class="kpi-card">
+          <div class="kpi-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7 12 3 4 7v10l8 4 8-4V7z"/><path d="M4 7l8 4 8-4"/></svg>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-label">Productos</div>
+            <div class="kpi-value" id="kpiProductos">0</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon info">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-label">Variantes</div>
+            <div class="kpi-value" id="kpiVariantes">0</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon success">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-label">Stock total</div>
+            <div class="kpi-value" id="kpiStock">0</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon warning">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h6l2 3h8v11a2 2 0 0 1-2 2H4V4z"/></svg>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-label">Categorías</div>
+            <div class="kpi-value" id="kpiCategorias">0</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Filtros mobile -->
+      <div class="filtros-mobile-toolbar">
+        <button id="btnOpenFiltros" type="button" class="btn-filtros-mobile" aria-label="Abrir filtros" title="Filtros">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h16M7 12h10M10 18h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Filtros</span>
+        </button>
+        <div id="filtrosResumen" class="filtros-resumen" aria-live="polite"></div>
+      </div>
+
+      <!-- Filtros desktop -->
+      <div class="filters-bar filtros-principales">
+        <div class="filtro">
+          <label class="filtro-label" for="filtroProducto">Producto</label>
+          <select id="filtroProducto">
+            <option value="">Todos los productos</option>
+          </select>
+        </div>
+        <div class="filtro">
+          <label class="filtro-label" for="filtroCategoria">Categoría</label>
+          <select id="filtroCategoria">
+            <option value="">Todas las categorías</option>
+          </select>
+        </div>
+        <div class="filtro filtro-talla">
+          <label class="filtro-label" for="filtroTalla">Talla</label>
+          <select id="filtroTalla">
+            <option value="">Todas las tallas</option>
+          </select>
+          <small id="hintTallaInventario" class="hint-talla is-waiting is-hidden">
+            Primero selecciona una categoría para habilitar tallas.
+          </small>
+        </div>
+      </div>
+
+      <!-- Filtros mobile modal -->
+      <div id="filtrosMobileModal" class="filtros-mobile-modal" aria-hidden="true">
+        <div class="filtros-mobile-backdrop" data-close-filtros></div>
+        <div class="filtros-mobile-sheet" role="dialog" aria-modal="true" aria-labelledby="filtrosMobileTitle">
+          <div class="filtros-mobile-head">
+            <h3 id="filtrosMobileTitle">Filtros de búsqueda</h3>
+            <button id="btnCloseFiltrosMobile" type="button" class="filtros-mobile-close" aria-label="Cerrar filtros">✕</button>
+          </div>
+          <div class="filtros-mobile-body">
+            <div class="filtro">
+              <label class="filtro-label" for="filtroProductoMobile">Producto</label>
+              <select id="filtroProductoMobile">
+                <option value="">Todos los productos</option>
+              </select>
+            </div>
+            <div class="filtro">
+              <label class="filtro-label" for="filtroCategoriaMobile">Categoría</label>
+              <select id="filtroCategoriaMobile">
+                <option value="">Todas las categorías</option>
+              </select>
+            </div>
+            <div class="filtro filtro-talla-mobile">
+              <label class="filtro-label" for="filtroTallaMobile">Talla</label>
+              <select id="filtroTallaMobile">
+                <option value="">Todas las tallas</option>
+              </select>
+              <small id="hintTallaInventarioMobile" class="hint-talla is-waiting is-hidden">
+                Selecciona una categoría para ver las tallas.
+              </small>
+            </div>
+          </div>
+          <div class="filtros-mobile-foot">
+            <button id="btnAplicarFiltrosMobile" type="button" class="add">Aplicar filtros</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid productos -->
+      <div class="grid" id="productosGrid" aria-live="polite"></div>
+    </main>
+  </div>
+</div>
+
+<!-- Modal Nuevo producto (multi-step) -->
+<div id="modalNew" role="dialog" aria-modal="true" aria-labelledby="modalNewTitle">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="modalNewTitle">Nuevo producto</h2>
+      <button id="closeModal" class="modal-close" aria-label="Cerrar" type="button">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="steps-wrapper">
+        <div class="step-indicator active"><span>1</span> Categoría</div>
+        <div class="step-indicator"><span>2</span> Producto</div>
+        <div class="step-indicator"><span>3</span> Tallas</div>
+        <div class="step-indicator"><span>4</span> Precios</div>
+        <div class="step-indicator"><span>5</span> Color</div>
+      </div>
+
+      <!-- PASO 1 · CATEGORÍA -->
+      <div class="step active" id="step1">
+        <h3>Selecciona una categoría</h3>
+        <div id="categoriaGrid" class="category-grid"></div>
+        <button type="button" class="add-secondary" onclick="mostrarCrearCategoria()">
+          + Crear nueva categoría
+        </button>
+      </div>
+
+      <!-- PASO 2 · INFO -->
+      <div class="step" id="step2">
+        <h3>Información del producto</h3>
+        <input id="nombreProducto" placeholder="Nombre del producto">
+
+        <div class="field-na">
+          <input id="marcaInput" placeholder="Marca del producto">
+          <button type="button" class="na-toggle" data-target="marcaInput">NA</button>
+        </div>
+
+        <div class="field-na">
+          <input id="estiloInput" placeholder="Estilo del producto">
+          <button type="button" class="na-toggle" data-target="estiloInput">NA</button>
+        </div>
+
+        <div class="actions">
+          <button type="button" onclick="prevStep(1)">Atrás</button>
+          <button type="button" class="add" onclick="if (validarStep2()) nextStep(3)">Siguiente</button>
+        </div>
+      </div>
+
+      <!-- PASO 3 · GÉNERO Y TALLAS -->
+      <div class="step" id="step3">
+        <h3>Género y tallas</h3>
+        <div id="generoGrid" class="gender-grid"></div>
+
+        <div id="tallasWrapper" class="hidden">
+          <div id="tallasSection" class="tallas-section">
+            <div class="tallas-header">
+              <button id="btnSelectAllTallas" type="button" class="select-all" style="display:none" onclick="seleccionarTodasTallas()">
+                Seleccionar todas
+              </button>
+            </div>
+            <div id="tallasOpciones" class="tallas-buttons"></div>
+          </div>
+          <p id="tallasMensaje" class="tallas-mensaje" style="display:none;">
+            No hay tallas disponibles para la categoría o género seleccionado.
+          </p>
+        </div>
+
+        <div class="actions">
+          <button type="button" onclick="prevStep(2)">Atrás</button>
+          <button type="button" class="add" onclick="nextStep(4)">Siguiente</button>
+        </div>
+      </div>
+
+      <!-- PASO 4 · PRECIO Y STOCK -->
+      <div class="step" id="step4">
+        <h3>Precio y stock</h3>
+        <div class="precio-general">
+          <label for="precioGeneral">Precio general</label>
+          <input id="precioGeneral" type="number" placeholder="Precio para todas las tallas">
+        </div>
+
+        <div id="variantesGrid" class="variantes-grid"></div>
+
+        <div class="actions">
+          <button type="button" onclick="prevStep(3)">Atrás</button>
+          <button type="button" class="add" onclick="nextStep(5)">Siguiente</button>
+        </div>
+      </div>
+
+      <!-- PASO 5 · COLOR -->
+      <div class="step" id="step5">
+        <h3>Color</h3>
+        <select id="colorSelect"></select>
+
+        <div class="actions">
+          <button type="button" onclick="prevStep(4)">Atrás</button>
+          <button type="button" class="add" onclick="crearProducto()">Crear producto</button>
+        </div>
+      </div>
+
+      <!-- Panel crear categoría -->
+      <div id="crearCategoriaPanel" class="step" style="display:none;">
+        <h4>Nueva categoría</h4>
+        <input id="nuevaCategoria" placeholder="Ej: Calzado de Seguridad">
+        <div class="step-actions">
+          <button type="button" onclick="cerrarCrearCategoria()">Cancelar</button>
+          <button type="button" class="add" onclick="guardarCategoria()">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm overlay usado por inventario.js#showConfirm -->
+<div id="confirmOverlay" class="confirm-overlay" aria-hidden="true">
+  <div class="confirm-box" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h3 id="confirmTitle">Confirmación</h3>
+    <p id="confirmMessage">¿Deseas continuar?</p>
+    <div class="confirm-actions">
+      <button id="confirmCancel" type="button" class="remove">Cancelar</button>
+      <button id="confirmOk" type="button" class="add">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="theme.js"></script>
+<script src="ui.js"></script>
+<script src="inventario.js"></script>
+<script>
+  // Sidebar mobile
+  (function () {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    const btn = document.getElementById('btnHamburger');
+    if (!sidebar || !btn) return;
+    const open = () => {
+      sidebar.classList.add('is-open');
+      backdrop.classList.add('is-open');
+      btn.setAttribute('aria-expanded', 'true');
+    };
+    const close = () => {
+      sidebar.classList.remove('is-open');
+      backdrop.classList.remove('is-open');
+      btn.setAttribute('aria-expanded', 'false');
+    };
+    btn.addEventListener('click', () => {
+      sidebar.classList.contains('is-open') ? close() : open();
+    });
+    backdrop.addEventListener('click', close);
+    sidebar.querySelectorAll('.nav-link').forEach(a => a.addEventListener('click', close));
+  })();
+
+  // Rellenar avatar/username desde CheckSession (no rompe si falla)
+  fetch('/CheckSession', { credentials: 'include' })
+    .then(r => r.ok ? r.json() : null)
+    .then(res => {
+      if (!res || !res.usuario) return;
+      const u = res.usuario;
+      const nombre = u.nombre || u.usuario || u.username || u.email || 'Usuario';
+      const nameEl = document.getElementById('userName');
+      const av = document.getElementById('userAvatar');
+      if (nameEl) nameEl.textContent = nombre;
+      if (av) av.textContent = (nombre[0] || 'U').toUpperCase();
+    })
+    .catch(() => {});
+</script>
+</body>
+</html>

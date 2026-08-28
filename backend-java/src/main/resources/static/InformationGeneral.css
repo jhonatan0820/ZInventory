@@ -1,0 +1,241 @@
+/* =====================================================
+   INFORMATION GENERAL · Report page
+   Uses design tokens from styles.css
+===================================================== */
+
+.contenido {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ============ FILTROS ============ */
+.filtros {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-4);
+  align-items: end;
+}
+.titulo-filtros {
+  grid-column: 1 / -1;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin: 0 0 var(--space-2);
+  color: var(--color-text);
+}
+.filtros .filtro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  position: relative;
+}
+.filtros label {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.filtros select {
+  width: 100%;
+  padding: 0.6rem 2.25rem 0.6rem 0.85rem;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+}
+.filtros select:hover { border-color: var(--color-border-strong); }
+.filtros select:focus {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
+}
+.filtros select:disabled {
+  background-color: var(--color-surface-alt);
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+#btnGenerar {
+  padding: 0.65rem 1rem;
+  background: var(--color-primary);
+  color: #fff;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  height: 42px;
+  align-self: end;
+}
+#btnGenerar:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+#btnGenerar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============ PROGRESS ============ */
+.progress {
+  height: 3px;
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  display: none;
+  position: relative;
+}
+.progress .bar {
+  position: absolute;
+  inset: 0;
+  width: 30%;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  animation: progressSlide 1.2s ease-in-out infinite;
+}
+@keyframes progressSlide {
+  0%   { left: -30%; }
+  100% { left: 100%; }
+}
+
+/* ============ TABLA ============ */
+.table-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.contenido .table-wrapper {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: auto;
+  box-shadow: var(--shadow-sm);
+  max-height: 60vh;
+  display: none;
+}
+.contenido table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.contenido thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-surface-alt);
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+.contenido tbody td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.contenido tbody tr:last-child td { border-bottom: 0; }
+.contenido tbody tr:hover { background: var(--color-surface-alt); }
+
+/* ============ TOTALES ============ */
+.totales {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+.total-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.total-card span {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 500;
+}
+.total-card strong {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============ TOP BAR ============ */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+.top-bar .muted {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+#btnDescargar {
+  padding: 0.55rem 1rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+#btnDescargar:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+  border-color: var(--color-border-strong);
+}
+#btnDescargar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============ ERROR ============ */
+.error {
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+  padding: var(--space-2) 0;
+}
+.error:empty { display: none; }
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 768px) {
+  .filtros { grid-template-columns: 1fr 1fr; }
+  .titulo-filtros { grid-column: 1 / -1; }
+  #btnGenerar { grid-column: 1 / -1; }
+  .totales { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .filtros { grid-template-columns: 1fr; }
+  .totales { grid-template-columns: 1fr; }
+}

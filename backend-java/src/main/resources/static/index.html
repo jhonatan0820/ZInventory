@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar sesión · Inventorio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+<button type="button" class="theme-toggle-floating" data-theme-toggle aria-label="Cambiar tema"></button>
+
+<main class="auth-shell">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <svg class="auth-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 7 12 3 4 7v10l8 4 8-4V7z"/>
+        <path d="M4 7l8 4 8-4"/>
+        <path d="M12 11v10"/>
+      </svg>
+      <h1 class="auth-title">Inventorio</h1>
+      <p class="auth-sub">Dotaciones Zambrano · Iniciar sesión</p>
+    </div>
+
+    <form id="loginForm" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="usuario">Usuario</label>
+        <input class="input" type="text" id="usuario" autocomplete="username" placeholder="Tu usuario" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Contraseña</label>
+        <div class="input-password">
+          <input class="input" type="password" id="password" autocomplete="current-password" placeholder="Tu contraseña" required>
+          <button type="button" class="toggle-eye" id="toggleEye" aria-label="Mostrar u ocultar contraseña">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="loginError" class="auth-alert" style="display:none" role="alert" aria-live="assertive"></div>
+      <p id="attempts" class="pw-hint" style="text-align:right; margin-top:.4rem;"></p>
+
+      <button id="btnLogin" type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:.4rem;">
+        <span class="btn-label">Ingresar</span>
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <a href="./recuperar.html">¿Olvidaste tu contraseña?</a>
+    </div>
+  </div>
+</main>
+
+<p class="auth-copy">© 2026 Dotaciones Zambrano · Desarrollado por Jhonatan Zambrano</p>
+
+<script src="./config.js"></script>
+<script src="./theme.js"></script>
+<script src="./ui.js"></script>
+<script>
+  const MAX_INTENTOS = 3;
+  const attemptKey = 'login_attempts';
+
+  window.addEventListener('load', () => sessionStorage.removeItem(attemptKey));
+
+  const form = document.getElementById('loginForm');
+  const inputUser = document.getElementById('usuario');
+  const inputPass = document.getElementById('password');
+  const btnLogin = document.getElementById('btnLogin');
+  const btnLabel = btnLogin.querySelector('.btn-label');
+  const errorBox = document.getElementById('loginError');
+  const attemptsMsg = document.getElementById('attempts');
+  const toggleEye = document.getElementById('toggleEye');
+
+  toggleEye.addEventListener('click', () => {
+    const isPwd = inputPass.type === 'password';
+    inputPass.type = isPwd ? 'text' : 'password';
+    toggleEye.setAttribute('aria-pressed', String(isPwd));
+  });
+
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.style.display = 'block';
+  }
+  function clearError() {
+    errorBox.textContent = '';
+    errorBox.style.display = 'none';
+  }
+
+  function setLoading(loading) {
+    btnLogin.disabled = loading;
+    btnLabel.textContent = loading ? 'Ingresando…' : 'Ingresar';
+    if (loading) {
+      const sp = document.createElement('span');
+      sp.className = 'btn-spinner';
+      sp.setAttribute('aria-hidden', 'true');
+      sp.id = '__spin';
+      btnLogin.prepend(sp);
+    } else {
+      const sp = btnLogin.querySelector('#__spin');
+      if (sp) sp.remove();
+    }
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    login();
+  });
+
+  function login() {
+    const usuario = inputUser.value.trim();
+    const password = inputPass.value.trim();
+    const attempts = Number(sessionStorage.getItem(attemptKey) || '0');
+
+    clearError();
+
+    if (!usuario || !password) {
+      showError('Completa todos los campos');
+      return;
+    }
+
+    setLoading(true);
+
+    fetch('/Login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario, password })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (!res.ok && res.error === 'MAX_INTENTOS') {
+        sessionStorage.removeItem(attemptKey);
+        attemptsMsg.textContent = '';
+        showError(res.mensaje || 'Demasiados intentos. Restablece tu contraseña.');
+        showToast(res.mensaje || 'Demasiados intentos. Restablece tu contraseña.', 'error', 5000);
+        setTimeout(() => { window.location.href = './recuperar.html'; }, 2000);
+        return;
+      }
+
+      if (!res.ok) {
+        const nextAttempts = attempts + 1;
+        sessionStorage.setItem(attemptKey, String(nextAttempts));
+        attemptsMsg.textContent = `Intentos: ${nextAttempts}/${MAX_INTENTOS}`;
+        showError(res.error || 'Credenciales inválidas');
+        showToast(res.error || 'Credenciales inválidas', 'error');
+        setLoading(false);
+        if (nextAttempts >= MAX_INTENTOS) {
+          showToast('Demasiados intentos. Restablece tu contraseña.', 'error', 5000);
+          setTimeout(() => { window.location.href = './recuperar.html'; }, 2000);
+        }
+        return;
+      }
+
+      sessionStorage.removeItem(attemptKey);
+      attemptsMsg.textContent = '';
+      showToast('Acceso correcto', 'success');
+      setTimeout(() => { window.location.href = './inventario.html'; }, 600);
+    })
+    .catch(() => {
+      showError('Error de conexión con el servidor');
+      showToast('Error de conexión', 'error');
+      setLoading(false);
+    });
+  }
+</script>
+
+</body>
+</html>
