@@ -1,233 +1,408 @@
 package com.dotacioneszambrano.inventorio.service;
 
+import com.dotacioneszambrano.inventorio.entity.Estilo;
+import com.dotacioneszambrano.inventorio.entity.Marca;
+import com.dotacioneszambrano.inventorio.entity.Producto;
+import com.dotacioneszambrano.inventorio.entity.Talla;
+import com.dotacioneszambrano.inventorio.entity.Variante;
 import com.dotacioneszambrano.inventorio.dto.AddProductoRequest;
 import com.dotacioneszambrano.inventorio.exception.ApiException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.dotacioneszambrano.inventorio.repository.EstiloRepository;
+import com.dotacioneszambrano.inventorio.repository.MarcaRepository;
+import com.dotacioneszambrano.inventorio.repository.ProductoRepository;
+import com.dotacioneszambrano.inventorio.repository.TallaRepository;
+import com.dotacioneszambrano.inventorio.repository.VarianteRepository;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.PreparedStatement;
-import java.sql.Statement;
-import java.util.Collections;
+import java.math.BigDecimal;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-/**
- * Migracion 1:1 de la logica de productos del backend Python.
- * Mantiene los mismos SQL, incluyendo upsert por combinacion NULL-safe con <=>.
- */
 @Service
 public class ProductoService {
 
-    private static final Logger log = LoggerFactory.getLogger(ProductoService.class);
-    private final JdbcTemplate jdbc;
+    private final ProductoRepository productoRepository;
+    private final VarianteRepository varianteRepository;
+    private final MarcaRepository marcaRepository;
+    private final EstiloRepository estiloRepository;
+    private final TallaRepository tallaRepository;
+    private final StockService stockService;
 
-    public ProductoService(JdbcTemplate jdbc) {
-        this.jdbc = jdbc;
+    public ProductoService(ProductoRepository productoRepository,
+                           VarianteRepository varianteRepository,
+                           MarcaRepository marcaRepository,
+                           EstiloRepository estiloRepository,
+                           TallaRepository tallaRepository,
+                           StockService stockService) {
+        this.productoRepository = productoRepository;
+        this.varianteRepository = varianteRepository;
+        this.marcaRepository = marcaRepository;
+        this.estiloRepository = estiloRepository;
+        this.tallaRepository = tallaRepository;
+        this.stockService = stockService;
     }
 
-    // GET /GetProductos
     public List<Map<String, Object>> getProductos() {
-        return jdbc.queryForList("""
-                SELECT
-                    p.id_producto AS id_producto,
-                    p.nombre AS nomproducto,
-                    cat.nombre AS categoria,
-                    v.id_variante AS id_variante,
-                    m.nombre AS marca,
-                    e.nombre AS estilo,
-                    c.nombre AS color,
-                    t.valor AS talla,
-                    v.precio AS precio,
-                    v.stock AS stock
-                FROM variantes v
-                JOIN productos p ON v.id_producto = p.id_producto
-                LEFT JOIN marcas m ON p.id_marca = m.id_marca
-                JOIN categorias cat ON p.id_categoria = cat.id_categoria
-                LEFT JOIN estilos e ON p.id_estilo = e.id_estilo
-                LEFT JOIN colores c ON v.id_color = c.id_color
-                LEFT JOIN tallas t ON v.id_talla = t.id_talla
-                WHERE p.id_estado = 1 and v.id_estado = 1
-                """);
+        return mapRows(productoRepository.findActiveProductRows());
     }
 
-    // POST /AddProducto
+    public InventorySearchResult searchInventory(InventoryFilters filters) {
+        String query = cleanOptional(filters.query());
+        String productName = cleanOptional(filters.productName());
+        String brand = cleanOptional(filters.brand());
+        String style = cleanOptional(filters.style());
+        String color = cleanOptional(filters.color());
+        String size = cleanOptional(filters.size());
+        String category = cleanOptional(filters.category());
+        String gender = cleanOptional(filters.gender());
+        Double priceGreaterThan = filters.priceGreaterThan();
+        Double priceLessThan = filters.priceLessThan();
+        Double priceEquals = filters.priceEquals();
+        validatePriceFilters(priceGreaterThan, priceLessThan, priceEquals);
+        if (query == null && productName == null && brand == null && style == null
+                && color == null && size == null && category == null && gender == null
+                && priceGreaterThan == null && priceLessThan == null && priceEquals == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Indica al menos un criterio para consultar el inventario");
+        }
+
+        List<Object[]> rows = productoRepository.searchActiveInventory(query, productName,
+                brand, style, color, size, category, gender, priceGreaterThan, priceLessThan,
+                priceEquals, PageRequest.of(0, 20));
+        long matchingVariants = productoRepository.countActiveInventory(query, productName,
+                brand, style, color, size, category, gender, priceGreaterThan, priceLessThan,
+                priceEquals);
+        long totalStock = productoRepository.sumActiveInventoryStock(query, productName,
+                brand, style, color, size, category, gender, priceGreaterThan, priceLessThan,
+                priceEquals);
+        return new InventorySearchResult(mapRows(rows), matchingVariants, totalStock);
+    }
+
+    private static void validatePriceFilters(Double greaterThan, Double lessThan, Double equals) {
+        for (Double price : new Double[]{greaterThan, lessThan, equals}) {
+            if (price != null && (!Double.isFinite(price) || price < 0)) {
+                throw new ApiException(HttpStatus.BAD_REQUEST,
+                        "Los filtros de precio deben ser números válidos no negativos");
+            }
+        }
+        if (equals != null && (greaterThan != null || lessThan != null)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "No combines un precio exacto con un límite de precio");
+        }
+        if (greaterThan != null && lessThan != null && greaterThan >= lessThan) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "El límite de precio mayor debe ser inferior al límite menor");
+        }
+    }
+
+    public String describeVariant(Long idVariante) {
+        if (idVariante == null || idVariante <= 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Variante inválida");
+        }
+        ProductoRepository.ActiveVariantDescription variant = productoRepository
+                .findActiveProductRowByVariantId(idVariante)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Variante activa no encontrada"));
+        return "producto " + variant.getProductName() + ", categoría " + variant.getCategory()
+                + ", marca " + variant.getBrand()
+                + ", estilo " + variant.getStyle() + ", color " + variant.getColor()
+                + ", talla " + variant.getSize() + ", precio actual $" + variant.getPrice()
+                + ", stock actual " + variant.getStock();
+    }
+
+    public String describeProduct(Long idProducto) {
+        Producto producto = findActiveProduct(idProducto);
+        return producto.getNombre() + " (ID " + producto.getIdProducto() + ")";
+    }
+
+    public boolean productExists(AddProductoRequest request) {
+        if (request == null || request.id_categoria() == null || request.id_genero() == null
+                || request.nombre() == null || request.nombre().isBlank()) {
+            return false;
+        }
+        String brandName = cleanOptional(request.marca());
+        String styleName = cleanOptional(request.estilo());
+        Long brandId = brandName == null ? null : marcaRepository
+                .findFirstByNombreIgnoreCaseAndIdEstado(brandName, 1)
+                .map(Marca::getIdMarca)
+                .orElse(null);
+        Long styleId = styleName == null ? null : estiloRepository
+                .findFirstByNombreIgnoreCase(styleName)
+                .map(Estilo::getIdEstilo)
+                .orElse(null);
+        if ((brandName != null && brandId == null) || (styleName != null && styleId == null)) {
+            return false;
+        }
+        Producto producto = productoRepository
+                .findFirstByNombreIgnoreCaseAndIdCategoriaAndIdGeneroAndIdMarcaAndIdEstilo(
+                        request.nombre().trim(), request.id_categoria(), request.id_genero(),
+                        brandId, styleId)
+                .orElse(null);
+        if (producto == null || !Integer.valueOf(1).equals(producto.getIdEstado())
+                || request.variantes() == null || request.variantes().isEmpty()) {
+            return false;
+        }
+        return request.variantes().stream().allMatch(input -> {
+            if (input == null || input.talla() == null || input.precio() == null
+                    || !Double.isFinite(input.precio())) return false;
+            return tallaRepository.findByValorIgnoreCaseAndIdCategoriaAndIdGenero(
+                            input.talla().trim(), request.id_categoria(), request.id_genero())
+                    .stream()
+                    .anyMatch(talla -> varianteRepository
+                            .findAllByIdProductoAndIdColorAndIdTalla(
+                                    producto.getIdProducto(),
+                                    request.id_color() == null ? 0 : request.id_color(),
+                                    talla.getIdTalla())
+                            .stream()
+                            .anyMatch(variante -> Integer.valueOf(1).equals(variante.getIdEstado())
+                                    && variante.getPrecio() != null
+                                    && BigDecimal.valueOf(variante.getPrecio())
+                                            .compareTo(BigDecimal.valueOf(input.precio())) == 0));
+        });
+    }
+
+    private List<Map<String, Object>> mapRows(List<Object[]> rows) {
+        String[] keys = {"id_producto", "nomproducto", "categoria", "id_variante", "marca",
+                "estilo", "color", "talla", "precio", "stock"};
+        return rows.stream().map(values -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            for (int i = 0; i < keys.length; i++) {
+                row.put(keys[i], values[i]);
+            }
+            return row;
+        }).toList();
+    }
+
     @Transactional
     public void addProducto(AddProductoRequest req) {
-        // Validaciones (identicas al Python)
-        if (req.id_genero() == null)
+        if (req.id_genero() == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Género requerido");
-        if (req.id_categoria() == null)
+        }
+        if (req.id_categoria() == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Categoría requerida");
-        String nombre = req.nombre() == null ? "" : req.nombre().trim();
-        if (nombre.isBlank())
+        }
+        String submittedName = req.nombre() == null ? "" : req.nombre().trim();
+        if (submittedName.isBlank()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Nombre requerido");
-        if (req.variantes() == null || req.variantes().isEmpty())
+        }
+        String nombre = submittedName;
+        if (req.variantes() == null || req.variantes().isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Debe tener variantes");
-
-        String marca = req.marca() == null ? null : req.marca().trim();
-        if (marca != null && marca.isEmpty()) marca = null;
-        String estilo = req.estilo() == null ? null : req.estilo().trim();
-        if (estilo != null && estilo.isEmpty()) estilo = null;
-
-        int idCategoria = req.id_categoria();
-        int idGenero = req.id_genero();
-        int idColor = req.id_color() == null ? 0 : req.id_color();
-
-        // MARCA
-        Long idMarca = null;
-        if (marca != null) {
-            List<Long> m = jdbc.query(
-                    "SELECT id_marca FROM marcas WHERE nombre = ? and id_estado = 1",
-                    (rs, i) -> rs.getLong(1), marca);
-            if (!m.isEmpty()) {
-                idMarca = m.get(0);
-            } else {
-                idMarca = insertReturningId(
-                        "INSERT INTO marcas (nombre, id_categoria, id_estado) VALUES (?, ?, 1)",
-                        marca, idCategoria);
-            }
         }
 
-        // ESTILO
-        Long idEstilo = null;
-        if (estilo != null) {
-            List<Long> e = jdbc.query(
-                    "SELECT id_estilo FROM estilos WHERE nombre = ?",
-                    (rs, i) -> rs.getLong(1), estilo);
-            if (!e.isEmpty()) {
-                idEstilo = e.get(0);
-            } else {
-                idEstilo = insertReturningId(
-                        "INSERT INTO estilos (nombre, id_marca, id_estado) VALUES (?, ?, 1)",
-                        estilo, idMarca);
-            }
+        String marcaNombre = cleanOptional(req.marca());
+        String estiloNombre = cleanOptional(req.estilo());
+        Integer idCategoria = req.id_categoria();
+        Integer idGenero = req.id_genero();
+        Integer idColor = req.id_color() == null ? 0 : req.id_color();
+
+        Marca existingBrand = marcaNombre == null ? null : marcaRepository
+                .findFirstByNombreIgnoreCase(marcaNombre).orElse(null);
+        if (existingBrand != null && !Integer.valueOf(1).equals(existingBrand.getIdEstado())) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "La marca “" + marcaNombre + "” ya existe inactiva; no se duplicó");
+        }
+        Long idMarca = existingBrand == null
+                ? (marcaNombre == null ? null : marcaRepository.save(
+                        new Marca(marcaNombre, idCategoria, 1)).getIdMarca())
+                : existingBrand.getIdMarca();
+
+        Estilo existingStyle = estiloNombre == null ? null : estiloRepository
+                .findFirstByNombreIgnoreCase(estiloNombre).orElse(null);
+        if (existingStyle != null && !Integer.valueOf(1).equals(existingStyle.getIdEstado())) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "El estilo “" + estiloNombre + "” ya existe inactivo; no se duplicó");
+        }
+        Long idEstilo = existingStyle == null
+                ? (estiloNombre == null ? null : estiloRepository.save(
+                        new Estilo(estiloNombre, idMarca, 1)).getIdEstilo())
+                : existingStyle.getIdEstilo();
+
+        Producto producto = productoRepository
+                .findFirstByNombreIgnoreCaseAndIdCategoriaAndIdGeneroAndIdMarcaAndIdEstilo(
+                        nombre, idCategoria, idGenero, idMarca, idEstilo)
+                .orElse(null);
+        if (producto == null) {
+            producto = productoRepository.save(
+                    new Producto(nombre, idMarca, idEstilo, idCategoria, idGenero, 1));
+        } else if (!Integer.valueOf(1).equals(producto.getIdEstado())) {
+            producto.setIdEstado(1);
+            producto = productoRepository.save(producto);
         }
 
-        // PRODUCTO (reutilizar si existe, con NULL-safe <=>)
-        Long idProducto;
-        List<Map<String, Object>> existente = jdbc.queryForList("""
-                SELECT id_producto, id_estado
-                FROM productos
-                WHERE nombre = ?
-                  AND id_categoria = ?
-                  AND id_genero = ?
-                  AND (id_marca <=> ?)
-                  AND (id_estilo <=> ?)
-                LIMIT 1
-                """, nombre, idCategoria, idGenero, idMarca, idEstilo);
-
-        if (!existente.isEmpty()) {
-            Map<String, Object> ex = existente.get(0);
-            idProducto = ((Number) ex.get("id_producto")).longValue();
-            if (((Number) ex.get("id_estado")).intValue() != 1) {
-                jdbc.update("UPDATE productos SET id_estado = 1 WHERE id_producto = ?", idProducto);
+        Long idProducto = producto.getIdProducto();
+        for (AddProductoRequest.VarianteInput input : req.variantes()) {
+            if (input == null || input.talla() == null || input.talla().isBlank()) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Talla requerida");
             }
-        } else {
-            idProducto = insertReturningId("""
-                    INSERT INTO productos
-                    (nombre, id_marca, id_estilo, id_categoria, id_genero, id_estado)
-                    VALUES (?, ?, ?, ?, ?, 1)
-                    """, nombre, idMarca, idEstilo, idCategoria, idGenero);
-        }
-
-        // VARIANTES
-        for (AddProductoRequest.VarianteInput v : req.variantes()) {
-            String talla = v.talla();
-            Double precio = v.precio();
-            Integer stock = v.stock();
-
-            Long idTalla;
-            List<Long> t = jdbc.query("""
-                    SELECT id_talla
-                    FROM tallas
-                    WHERE valor = ? AND id_categoria = ? AND id_genero = ? AND id_estado = 1
-                    """, (rs, i) -> rs.getLong(1), talla, idCategoria, idGenero);
-            if (!t.isEmpty()) {
-                idTalla = t.get(0);
-            } else {
-                idTalla = insertReturningId("""
-                        INSERT INTO tallas (valor, id_categoria, id_genero, id_estado)
-                        VALUES (?, ?, ?, 1)
-                        """, talla, idCategoria, idGenero);
+            if (input.precio() == null || !Double.isFinite(input.precio()) || input.precio() <= 0) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Precio inválido");
+            }
+            if (input.stock() == null || input.stock() <= 0) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "La cantidad debe ser mayor a cero");
             }
 
-            List<Long> vExist = jdbc.query("""
-                    SELECT id_variante
-                    FROM variantes
-                    WHERE id_producto = ? AND id_color = ? AND id_talla = ?
-                    LIMIT 1
-                    """, (rs, i) -> rs.getLong(1), idProducto, idColor, idTalla);
+            List<Talla> matchingSizes = tallaRepository
+                    .findByValorIgnoreCaseAndIdCategoriaAndIdGenero(
+                            input.talla().trim(), idCategoria, idGenero);
+            Talla talla = matchingSizes.stream()
+                    .filter(existing -> Integer.valueOf(1).equals(existing.getIdEstado()))
+                    .findFirst()
+                    .orElse(null);
+            if (talla == null && !matchingSizes.isEmpty()) {
+                throw new ApiException(HttpStatus.CONFLICT,
+                        "La talla “" + input.talla() + "” ya existe, pero está inactiva; no se duplicó");
+            }
+            if (talla == null) {
+                talla = tallaRepository.save(new Talla(
+                        input.talla().trim().toUpperCase(Locale.ROOT), idCategoria, idGenero, 1));
+            }
 
-            if (!vExist.isEmpty()) {
-                jdbc.update("""
-                        UPDATE variantes
-                        SET id_estado = 1, precio = ?, stock = ?
-                        WHERE id_variante = ?
-                        """, precio, stock, vExist.get(0));
+            BigDecimal precioEntrada = BigDecimal.valueOf(input.precio());
+            Variante existente = varianteRepository
+                    .findAllByIdProductoAndIdColorAndIdTalla(
+                    idProducto, idColor, talla.getIdTalla())
+                    .stream()
+                    .filter(variante -> variante.getPrecio() != null
+                    && BigDecimal.valueOf(variante.getPrecio()).compareTo(precioEntrada) == 0)
+                    .sorted(Comparator.comparing(
+                    variante -> !Integer.valueOf(1).equals(variante.getIdEstado())))
+                    .findFirst()
+                    .orElse(null);
+            if (existente != null) {
+                Variante variante = existente;
+                variante.setIdEstado(1);
+                varianteRepository.save(variante);
+                stockService.entradaStock(variante.getIdVariante(), input.stock());
             } else {
-                jdbc.update("""
-                        INSERT INTO variantes
-                        (id_producto, id_color, id_talla, precio, stock, id_estado)
-                        VALUES (?, ?, ?, ?, ?, 1)
-                        """, idProducto, idColor, idTalla, precio, stock);
+                Variante variante = varianteRepository.save(new Variante(
+                        idProducto, idColor, talla.getIdTalla(),
+                        input.precio(), 0, 1));
+                stockService.entradaStock(variante.getIdVariante(), input.stock());
             }
         }
     }
 
-    // POST /DeleteProductos
     @Transactional
     public int deleteProductos(List<Integer> ids) {
         if (ids == null || ids.isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "IDs inválidos");
         }
-        String placeholders = ids.stream().map(x -> "?").collect(Collectors.joining(","));
+        return hideVariants(ids.stream().map(Integer::longValue).toList());
+    }
 
-        List<Long> productoIds = jdbc.query(
-                "SELECT DISTINCT p.id_producto FROM variantes v " +
-                        "JOIN productos p ON v.id_producto = p.id_producto " +
-                        "WHERE v.id_variante IN (" + placeholders + ")",
-                (rs, i) -> rs.getLong(1), ids.toArray());
+    @Transactional
+    public int hideVariant(Long idVariante) {
+        if (idVariante == null || idVariante <= 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Variante inválida");
+        }
+        varianteRepository.findByIdVarianteAndIdEstado(idVariante, 1)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Variante activa no encontrada"));
+        int hidden = hideVariants(List.of(idVariante));
+        if (hidden != 1) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "Variante activa no encontrada");
+        }
+        return hidden;
+    }
 
-        int eliminados = jdbc.update(
-                "UPDATE variantes SET id_estado = 2 WHERE id_variante IN (" + placeholders + ")",
-                ids.toArray());
+    @Transactional
+    public void hideProduct(Long idProducto) {
+        if (idProducto == null || idProducto <= 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Producto inválido");
+        }
+        Producto producto = productoRepository.findById(idProducto)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Producto no encontrado"));
+        if (!Integer.valueOf(1).equals(producto.getIdEstado())) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "Producto activo no encontrado");
+        }
+        List<Long> variantIds = varianteRepository
+                .findAllByIdProductoAndIdEstado(idProducto, 1).stream()
+                .map(Variante::getIdVariante)
+                .toList();
+        if (!variantIds.isEmpty()) {
+            hideVariants(variantIds);
+        }
+        producto.setIdEstado(2);
+        productoRepository.save(producto);
+    }
 
-        if (!productoIds.isEmpty()) {
-            String phProd = productoIds.stream().map(x -> "?").collect(Collectors.joining(","));
-            List<Long> sinVariantes = jdbc.query("""
-                    SELECT p.id_producto
-                    FROM productos p
-                    LEFT JOIN variantes v
-                      ON v.id_producto = p.id_producto AND v.id_estado = 1
-                    WHERE p.id_producto IN (%s)
-                    GROUP BY p.id_producto
-                    HAVING COUNT(v.id_variante) = 0
-                    """.formatted(phProd), (rs, i) -> rs.getLong(1), productoIds.toArray());
+    @Transactional
+    public void renameProduct(Long idProducto, String nombre) {
+        if (idProducto == null || idProducto <= 0 || nombre == null || nombre.isBlank()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Producto y nombre son requeridos");
+        }
+        Producto producto = findActiveProduct(idProducto);
+        producto.setNombre(nombre.trim());
+        productoRepository.save(producto);
+    }
 
-            if (!sinVariantes.isEmpty()) {
-                String phDis = sinVariantes.stream().map(x -> "?").collect(Collectors.joining(","));
-                jdbc.update("UPDATE productos SET id_estado = 2 WHERE id_producto IN (" + phDis + ")",
-                        sinVariantes.toArray());
+    @Transactional
+    public void updateVariantPrice(Long idVariante, Double precio) {
+        if (idVariante == null || idVariante <= 0 || precio == null
+                || !Double.isFinite(precio) || precio <= 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Variante y precio deben ser válidos");
+        }
+        Variante variante = varianteRepository.findByIdVarianteAndIdEstado(idVariante, 1)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Variante no encontrada"));
+        variante.setPrecio(precio);
+        varianteRepository.save(variante);
+    }
+
+    private Producto findActiveProduct(Long idProducto) {
+        if (idProducto == null || idProducto <= 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Producto inválido");
+        }
+        Producto producto = productoRepository.findById(idProducto)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Producto no encontrado"));
+        if (!Integer.valueOf(1).equals(producto.getIdEstado())) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "Producto activo no encontrado");
+        }
+        return producto;
+    }
+
+    private int hideVariants(List<Long> variantIds) {
+        List<Long> productIds = productoRepository.findIdsWithSelectedVariants(variantIds);
+        int deleted = varianteRepository.updateStateByIds(variantIds, 2);
+        if (!productIds.isEmpty()) {
+            List<Long> productIdsWithoutActiveVariants =
+                    productoRepository.findIdsWithoutActiveVariants(productIds);
+            if (!productIdsWithoutActiveVariants.isEmpty()) {
+                List<Producto> products = productoRepository.findAllById(productIdsWithoutActiveVariants);
+                products.forEach(product -> product.setIdEstado(2));
+                productoRepository.saveAll(products);
             }
         }
-        return eliminados;
+        return deleted;
     }
 
-    private Long insertReturningId(String sql, Object... params) {
-        KeyHolder holder = new GeneratedKeyHolder();
-        jdbc.update(con -> {
-            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            for (int i = 0; i < params.length; i++) ps.setObject(i + 1, params[i]);
-            return ps;
-        }, holder);
-        Number key = holder.getKey();
-        return key == null ? null : key.longValue();
+    private static String cleanOptional(String value) {
+        if (value == null) return null;
+        String cleaned = value.trim();
+        return cleaned.isEmpty() ? null : cleaned;
     }
+
+    public record InventoryFilters(
+            String query,
+            String productName,
+            String brand,
+            String style,
+            String color,
+            String size,
+            String category,
+            String gender,
+            Double priceGreaterThan,
+            Double priceLessThan,
+            Double priceEquals
+    ) {}
+
+    public record InventorySearchResult(
+            List<Map<String, Object>> rows,
+            long matchingVariants,
+            long totalStock
+    ) {}
 }

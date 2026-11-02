@@ -32,11 +32,12 @@
     return c;
   }
 
-  function showToast(message, type = 'info', timeout = 3000) {
+  function showToast(message, type = 'info', timeout = 3000, placement = 'default') {
     if (!message) return;
     const container = getToastContainer();
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
+    if (placement === 'center') toast.classList.add('toast-centered');
     toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
     toast.innerHTML =
       (ICONS[type] || ICONS.info) +
@@ -46,15 +47,25 @@
 
     requestAnimationFrame(() => toast.classList.add('is-visible'));
 
+    let dismissed = false;
     const remove = () => {
+      if (dismissed) return;
+      dismissed = true;
+      clearTimeout(toast._timer);
+      document.removeEventListener('click', dismissOnOutsideClick);
       toast.classList.remove('is-visible');
       setTimeout(() => toast.remove(), 220);
     };
+    const dismissOnOutsideClick = (event) => {
+      if (!toast.contains(event.target)) remove();
+    };
     toast._timer = setTimeout(remove, timeout);
     toast.addEventListener('click', () => {
-      clearTimeout(toast._timer);
       remove();
     });
+    if (placement === 'center') {
+      document.addEventListener('click', dismissOnOutsideClick);
+    }
   }
 
   /* ============ CONFIRM ============ */

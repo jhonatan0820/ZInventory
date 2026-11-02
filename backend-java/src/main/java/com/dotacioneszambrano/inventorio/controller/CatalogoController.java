@@ -35,6 +35,9 @@ public class CatalogoController {
     @GetMapping("/GetColores")
     public List<Map<String, Object>> getColores() { return service.getColores(); }
 
+    @GetMapping("/GetMarcas")
+    public List<Map<String, Object>> getMarcas() { return service.getMarcas(); }
+
     @PostMapping("/AddColor")
     public Map<String, Object> addColor(@RequestBody Map<String, String> body) {
         Long id = service.addColor(body.getOrDefault("nombre", "").trim());

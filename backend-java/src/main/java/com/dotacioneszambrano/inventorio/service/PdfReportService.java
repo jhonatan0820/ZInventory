@@ -18,9 +18,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Migra el flujo Python de generacion del reporte PDF:
- *   build_reporte_pdf_context -> render_template_string -> xhtml2pdf.pisa
- * a Java: Thymeleaf + OpenHTMLtoPDF.
+ * Builds the report context and renders the PDF with Thymeleaf and OpenHTMLtoPDF.
  */
 @Service
 public class PdfReportService {

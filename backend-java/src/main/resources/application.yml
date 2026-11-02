@@ -1,20 +1,31 @@
 spring:
   application:
     name: inventorio
-  # Carga adicional del archivo de secretos desde ./config (dentro de backend-java).
-  # El archivo config/application-secrets.yml esta en .gitignore.
+  # Soporta ejecutar desde la raiz del repositorio o desde backend-java/.
+  # El archivo application-secrets.yml esta en .gitignore.
   config:
     import:
-      - "optional:file:./config/application-secrets.yml"
+      - "optional:file:./backend-java/application-secrets.yml"
+      - "optional:file:./application-secrets.yml"
   thymeleaf:
     prefix: classpath:/templates/
     suffix: .html
     mode: HTML
     cache: false
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
 
 server:
-  port: ${PORT:8081}
-  # Cookies de sesion compatibles con el Front (cross-site)
+  port: ${PORT:8080}
+  # Cookie de sesión para el despliegue same-origin.
   servlet:
     session:
       cookie:
@@ -26,16 +37,15 @@ server:
       timeout: 7d
   forward-headers-strategy: framework
 
-# CORS orígenes permitidos (equivalente al setup de Flask-CORS)
+voice-assistant:
+  gemini:
+    base-url: https://generativelanguage.googleapis.com/v1beta
+    model: gemini-3.6-flash
+    live-model: gemini-3.8-live
+
 app:
   # Base URL del frontend, usada para el enlace de recuperacion en el correo.
-  reset-base-url: ${RESET_BASE_URL:http://localhost:8081}
-  cors:
-    allowed-origins:
-      - https://dotacioneszambrano.com
-      - https://www.dotacioneszambrano.com
-      - http://127.0.0.1:5500
-      - http://localhost:8081
+  reset-base-url: ${RESET_BASE_URL:http://localhost:8080}
   # Datos de la empresa para el reporte PDF (no sensibles)
   report:
     company-name: ${REPORT_COMPANY_NAME:Nombre de la empresa}

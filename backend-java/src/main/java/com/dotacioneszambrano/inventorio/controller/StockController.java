@@ -25,12 +25,13 @@ public class StockController {
         return Map.of("ok", true);
     }
 
-    @PostMapping("/EntradaStock")
+    @PostMapping("/EntradaStockConPrecio")
     public Map<String, Object> entrada(@RequestBody Map<String, Object> body) {
         Long idVariante = num(body.get("id_variante"));
         Integer cantidad = intOf(body.get("cantidad"));
-        service.entradaStock(idVariante, cantidad);
-        return Map.of("ok", true);
+        Double precio = doubleOf(body.get("precio"));
+        boolean varianteCreada = service.entradaStock(idVariante, cantidad, precio);
+        return Map.of("ok", true, "variante_creada", varianteCreada);
     }
 
     private static Long num(Object o) {

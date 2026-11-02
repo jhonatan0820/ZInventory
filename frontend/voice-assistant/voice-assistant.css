@@ -1,0 +1,820 @@
+#modalNew .modal-body.voice-assistant-open > .steps-wrapper,
+#modalNew .modal-body.voice-assistant-open > .step {
+  display: none !important;
+}
+
+.voice-assistant-panel[hidden],
+.voice-assistant-summary[hidden],
+.voice-assistant-actions button[hidden],
+.voice-assistant-return[hidden] {
+  display: none !important;
+}
+
+.voice-assistant-return {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.voice-assistant-panel {
+  display: flex;
+  min-height: min(58vh, 560px);
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-5);
+}
+
+.voice-assistant-stage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  text-align: center;
+}
+
+.voice-assistant-stage h3,
+.voice-assistant-stage p {
+  margin: 0;
+}
+
+.voice-assistant-stage h3 {
+  font-size: var(--text-lg);
+}
+
+.voice-assistant-state {
+  min-height: 1.5em;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
+.voice-assistant-state.is-error {
+  color: var(--color-danger);
+}
+
+.voice-assistant-stage .voice-assistant-state {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.voice-assistant-visualizer {
+  position: relative;
+  display: grid;
+  width: 116px;
+  height: 116px;
+  place-items: center;
+  border-radius: 50%;
+  transition: background var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base);
+}
+
+.assistant-orb {
+  position: relative;
+  display: block;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  overflow: visible;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 26%, #66a0ff 0%, #3674e8 46%, #1748b5 100%);
+  box-shadow: 0 0 18px rgb(37 99 235 / 38%), inset 0 0 8px rgb(255 255 255 / 24%);
+  transform: translateZ(0);
+}
+
+.assistant-orb-canvas {
+  position: absolute;
+  inset: -35%;
+  width: 170%;
+  height: 170%;
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+  filter: blur(0.75px);
+  pointer-events: none;
+}
+
+.voice-assistant-orb-ring {
+  position: absolute;
+  inset: -9px;
+  border: 1px solid currentColor;
+  border-radius: inherit;
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.voice-assistant-visualizer.is-active {
+  transform: scale(1.03);
+}
+
+.voice-assistant-visualizer.is-active .voice-assistant-orb-ring {
+  animation: voice-orb-pulse 1.8s ease-out infinite;
+}
+
+.voice-assistant-visualizer.is-muted {
+  background: var(--color-surface-alt);
+  color: var(--color-muted);
+  box-shadow: none;
+}
+
+.voice-assistant-summary {
+  padding: var(--space-4);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  color: var(--color-text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.voice-assistant-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.voice-assistant-mute {
+  min-width: 210px;
+}
+
+.voice-assistant-mute svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.voice-assistant-mute-slash {
+  display: none;
+}
+
+.voice-assistant-mute[aria-pressed="true"] .voice-assistant-mute-slash {
+  display: block;
+}
+
+.voice-assistant-mute[aria-pressed="false"] {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+.voice-assistant-mute[aria-pressed="true"] {
+  border-color: #dc2626;
+  background: #dc2626;
+  color: #fff;
+}
+
+.voice-assistant-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.voice-assistant-messages {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes voice-orb-pulse {
+  70% {
+    opacity: 0.35;
+    transform: scale(1.18);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.34);
+  }
+}
+
+@media (max-width: 600px) {
+  .voice-assistant-panel {
+    min-height: 62vh;
+  }
+
+  .voice-assistant-actions {
+    flex-direction: column;
+  }
+
+  .voice-assistant-actions button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-assistant-visualizer {
+    transition: none;
+  }
+
+  .voice-assistant-visualizer.is-active .voice-assistant-orb-ring {
+    animation: none;
+    opacity: 0.25;
+    transform: scale(1.05);
+  }
+}
+
+.voice-assistant-panel {
+  position: fixed;
+  z-index: 220;
+  right: 24px;
+  bottom: 24px;
+  width: var(--assistant-width, min(420px, calc(100vw - 32px)));
+  height: var(--assistant-height, min(560px, calc(100dvh - 48px)));
+  min-width: min(300px, calc(100vw - 24px));
+  min-height: min(320px, calc(100dvh - 24px));
+  max-height: min(78dvh, 680px);
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+  justify-content: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+  animation: assistant-panel-enter 180ms ease-out;
+}
+
+.voice-assistant-panel[hidden] {
+  display: none !important;
+}
+
+.voice-assistant-floating-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  color: var(--color-text);
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+}
+
+.voice-assistant-brand {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.voice-assistant-brand:focus-visible {
+  border-radius: 12px;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.voice-assistant-brand-mark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 22%, transparent);
+  border-radius: 14px;
+  background: linear-gradient(145deg, var(--color-primary-soft), var(--color-surface));
+  color: var(--color-primary);
+}
+
+.voice-assistant-brand-mark .assistant-orb {
+  width: 28px;
+  height: 28px;
+}
+
+.voice-assistant-brand-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.voice-assistant-brand-copy strong {
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.voice-assistant-brand-copy > span {
+  color: var(--color-muted);
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+
+.voice-assistant-floating-header .btn-icon {
+  width: 36px;
+  height: 36px;
+  font-size: 1.4rem;
+}
+
+.voice-assistant-panel .voice-assistant-stage {
+  flex: 0 0 auto;
+  gap: var(--space-2);
+}
+
+.voice-assistant-panel .voice-assistant-visualizer {
+  width: 82px;
+  height: 82px;
+  transition: background var(--transition-base), box-shadow var(--transition-base);
+}
+
+.voice-assistant-panel .voice-assistant-visualizer .assistant-orb {
+  width: 54px;
+  height: 54px;
+}
+
+.voice-assistant-panel .voice-assistant-state {
+  min-height: 1em;
+  margin: 0;
+}
+
+.voice-assistant-panel .voice-assistant-messages {
+  position: static;
+  display: flex;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0 var(--space-1);
+  overflow-y: auto;
+  clip: auto;
+  white-space: normal;
+  border: 0;
+}
+
+.voice-assistant-message {
+  width: fit-content;
+  max-width: 92%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.voice-assistant-message-user {
+  align-self: flex-end;
+  background: var(--color-primary-soft);
+}
+
+.voice-assistant-message-error {
+  color: var(--color-danger);
+}
+
+.voice-assistant-panel .voice-assistant-summary {
+  max-height: 150px;
+  flex: 0 1 auto;
+  padding: var(--space-3);
+  overflow-y: auto;
+  font-size: var(--text-sm);
+}
+
+.voice-assistant-panel .voice-assistant-actions {
+  flex: 0 0 auto;
+  gap: var(--space-2);
+}
+
+.voice-assistant-panel .voice-assistant-mute {
+  min-width: 0;
+}
+
+.voice-assistant-resize {
+  position: absolute;
+  z-index: 2;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  touch-action: none;
+}
+
+.voice-assistant-resize[data-direction="n"],
+.voice-assistant-resize[data-direction="s"] {
+  right: 14px;
+  left: 14px;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.voice-assistant-resize[data-direction="n"] { top: 0; }
+.voice-assistant-resize[data-direction="s"] { bottom: 0; }
+
+.voice-assistant-resize[data-direction="e"],
+.voice-assistant-resize[data-direction="w"] {
+  top: 14px;
+  bottom: 14px;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.voice-assistant-resize[data-direction="e"] { right: 0; }
+.voice-assistant-resize[data-direction="w"] { left: 0; }
+
+.voice-assistant-resize[data-direction="ne"],
+.voice-assistant-resize[data-direction="se"],
+.voice-assistant-resize[data-direction="sw"],
+.voice-assistant-resize[data-direction="nw"] {
+  width: 18px;
+  height: 18px;
+}
+
+.voice-assistant-resize[data-direction="ne"] { top: 0; right: 0; cursor: nesw-resize; }
+.voice-assistant-resize[data-direction="se"] { right: 0; bottom: 0; cursor: nwse-resize; }
+.voice-assistant-resize[data-direction="sw"] { bottom: 0; left: 0; cursor: nesw-resize; }
+.voice-assistant-resize[data-direction="nw"] { top: 0; left: 0; cursor: nwse-resize; }
+
+.voice-assistant-resize:hover {
+  background: var(--color-primary-soft);
+}
+
+.voice-assistant-resize:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -3px;
+}
+
+@keyframes assistant-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 600px) {
+  .voice-assistant-panel {
+    right: 12px;
+    bottom: 12px;
+    width: calc(100vw - 24px);
+    max-height: min(76dvh, 680px);
+    padding: var(--space-3);
+  }
+
+  .voice-assistant-panel .voice-assistant-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .voice-assistant-panel .voice-assistant-actions button {
+    width: auto;
+    flex: 1 1 42%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-assistant-panel {
+    animation: none;
+  }
+
+  .voice-assistant-panel .voice-assistant-visualizer {
+    transition: none;
+  }
+}
+
+.voice-assistant-full[hidden],
+.voice-assistant-bubble[hidden] {
+  display: none !important;
+}
+
+.voice-assistant-full {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  gap: var(--space-3);
+  overflow: hidden;
+}
+
+.voice-assistant-window-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  cursor: default;
+  touch-action: auto;
+}
+
+.voice-assistant-panel .voice-assistant-window-actions .btn-icon {
+  width: 36px;
+  height: 36px;
+}
+
+.voice-assistant-bubble {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.voice-assistant-bubble-open {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.voice-assistant-bubble-open:hover {
+  background: var(--color-surface-alt);
+}
+
+.voice-assistant-bubble-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  transition: box-shadow var(--transition-base), transform var(--transition-base);
+}
+
+.voice-assistant-bubble-icon .assistant-orb {
+  width: 26px;
+  height: 26px;
+}
+
+.voice-assistant-panel.is-speaking .voice-assistant-bubble-icon {
+  animation: assistant-bubble-pulse 1.2s ease-in-out infinite;
+}
+
+.voice-assistant-bubble-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.voice-assistant-bubble-copy strong {
+  font-size: var(--text-sm);
+}
+
+.voice-assistant-bubble-copy > span {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voice-assistant-panel.is-collapsed {
+  width: min(390px, calc(100vw - 32px));
+  min-height: 0;
+  height: auto;
+  max-height: none;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+}
+
+.voice-assistant-panel.is-collapsed .voice-assistant-bubble .btn-icon {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  font-size: 1.4rem;
+}
+
+.voice-assistant-panel.is-collapsed .voice-assistant-bubble-mute {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+}
+
+.voice-assistant-panel.is-collapsed .voice-assistant-resize {
+  display: none;
+}
+
+.voice-assistant-panel.is-compact {
+  width: min(116px, calc(100vw - 24px));
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  max-height: none;
+  padding: 8px;
+  border-radius: 20px;
+}
+
+.voice-assistant-panel.is-compact .voice-assistant-resize {
+  display: none;
+}
+
+.voice-assistant-panel.is-speaking .voice-assistant-visualizer {
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
+  box-shadow: 0 0 0 10px var(--color-primary-soft);
+  transform: scale(1.03);
+}
+
+.voice-assistant-panel.is-compact .voice-assistant-full {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.voice-assistant-panel.is-compact .voice-assistant-floating-header {
+  flex: 0 0 auto;
+}
+
+.voice-assistant-panel.is-compact .voice-assistant-brand {
+  gap: 0;
+}
+
+.voice-assistant-panel.is-compact .voice-assistant-brand-copy,
+.voice-assistant-panel.is-compact .voice-assistant-window-actions {
+  display: none;
+}
+
+.voice-assistant-panel.is-compact .voice-assistant-brand-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 15px;
+}
+
+.voice-assistant-panel.is-compact .voice-assistant-brand-mark .assistant-orb {
+  width: 34px;
+  height: 34px;
+}
+
+.voice-assistant-panel.is-compact .voice-assistant-state,
+.voice-assistant-panel.is-compact .voice-assistant-stage,
+.voice-assistant-panel.is-compact .voice-assistant-messages,
+.voice-assistant-panel.is-compact .voice-assistant-summary {
+  display: none;
+}
+
+.voice-assistant-panel.is-compact .voice-assistant-actions {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  gap: 0;
+}
+
+.voice-assistant-panel.is-compact .voice-assistant-actions > :not(.voice-assistant-mute) {
+  display: none;
+}
+
+.voice-assistant-panel.is-compact .voice-assistant-mute {
+  display: grid;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  box-shadow: 0 3px 10px rgb(15 23 42 / 18%);
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.voice-assistant-panel.is-compact .voice-assistant-mute:hover {
+  transform: translateY(-1px);
+}
+
+.voice-assistant-panel.is-compact .voice-assistant-mute:active {
+  transform: scale(0.94);
+}
+
+.voice-assistant-panel.is-compact .voice-assistant-mute svg {
+  width: 21px;
+  height: 21px;
+}
+
+.voice-assistant-panel.is-compact .voice-assistant-mute > span {
+  display: none;
+}
+
+@keyframes assistant-bubble-pulse {
+  50% {
+    box-shadow: 0 0 0 6px var(--color-primary-soft);
+    transform: scale(1.05);
+  }
+}
+
+@media (max-width: 600px) {
+  .voice-assistant-panel {
+    min-width: 0;
+    min-height: 0;
+    max-height: calc(100dvh - 24px);
+  }
+
+  .voice-assistant-panel.is-collapsed {
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    max-width: calc(100vw - 24px);
+    padding: var(--space-1);
+  }
+
+  .voice-assistant-panel.is-collapsed .voice-assistant-bubble-open {
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .voice-assistant-panel.is-collapsed .voice-assistant-bubble-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .voice-assistant-panel.is-collapsed .voice-assistant-bubble-copy,
+  .voice-assistant-panel.is-collapsed #voiceAssistantRestore,
+  .voice-assistant-panel.is-collapsed #voiceAssistantBubbleClose {
+    display: none;
+  }
+
+  .voice-assistant-panel.is-collapsed .voice-assistant-bubble {
+    gap: 8px;
+  }
+
+  .voice-assistant-panel.is-collapsed .voice-assistant-bubble-mute {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    border-radius: 14px;
+  }
+
+  .voice-assistant-panel.is-compact {
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    min-width: 0;
+    padding: 8px;
+    border-radius: 20px;
+  }
+
+  .voice-assistant-panel.is-compact .voice-assistant-full {
+    gap: 8px;
+  }
+
+  .voice-assistant-panel.is-compact .voice-assistant-floating-header {
+    justify-content: center;
+  }
+
+  .voice-assistant-panel.is-compact .voice-assistant-brand-copy,
+  .voice-assistant-panel.is-compact .voice-assistant-window-actions {
+    display: none;
+  }
+
+  .voice-assistant-panel.is-compact .voice-assistant-brand-mark {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+  }
+
+  .voice-assistant-panel.is-compact .voice-assistant-mute {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-assistant-visualizer.is-active .assistant-orb-dot,
+  .voice-assistant-panel.is-speaking .voice-assistant-bubble-icon .assistant-orb-dot {
+    animation: none;
+  }
+
+  .voice-assistant-panel.is-speaking .voice-assistant-bubble-icon {
+    animation: none;
+  }
+
+  .voice-assistant-panel.is-speaking .voice-assistant-brand-mark .assistant-orb-dot {
+    animation: none;
+  }
+}

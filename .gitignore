@@ -1,5 +1,9 @@
 # === Secretos ===
-backend-java/config/application-secrets.yml
+**/application-secrets.yml
+**/application-secrets.yaml
+.env
+.env.*
+!.env.example
 
 # === Java / Maven ===
 backend-java/target/
@@ -20,9 +24,7 @@ backend-java/target/
 .DS_Store
 Thumbs.db
 
-# === Python (residual del backend antiguo) ===
-__pycache__/
-*.pyc
-.venv/
-venv/
+# === Frontend ===
 node_modules/
+
+# === Docker ===

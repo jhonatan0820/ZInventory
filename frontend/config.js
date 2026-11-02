@@ -4,7 +4,7 @@
  * Como el frontend ahora se sirve desde el mismo Spring Boot que la API,
  * usamos ruta relativa (same-origin). No hace falta CORS local.
  *
- * Si deseas apuntar a un backend en otro host (por ejemplo el legacy Python),
+ * Si deseas apuntar a un backend en otro host,
  * cambia el valor de window.API_BASE a la URL absoluta.
  */
 (function () {

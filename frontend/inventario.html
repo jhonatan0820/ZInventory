@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="voice-assistant/voice-assistant.css?v=voice-panel-11" />
 </head>
 <body>
 
@@ -78,22 +79,34 @@
       <div class="page-header-row">
         <div class="page-title-block">
           <h1>Inventario</h1>
-          <p>Gestiona productos, variantes y stock en tiempo real.</p>
+          <p>Productos y stock.</p>
         </div>
         <div class="page-actions">
-          <div class="search-input">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input id="searchInput" class="input" type="search" placeholder="Buscar por marca, estilo, color o talla…" aria-label="Buscar producto">
+          <div class="search-filter-row">
+            <div class="search-input">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input id="searchInput" class="input" type="search" placeholder="Buscar por marca, estilo, color o talla…" aria-label="Buscar producto">
+            </div>
+            <button id="btnOpenFiltros" type="button" class="btn-filtros-mobile" aria-label="Abrir filtros" title="Filtros">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h16M7 12h10M10 18h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
           </div>
-          <button id="btnDelete" class="btn btn-danger-soft" type="button">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
-            Eliminar
-          </button>
-          <button id="btnCancelDelete" class="btn btn-ghost" type="button" style="display:none;">Cancelar</button>
-          <button id="btnNew" class="btn btn-primary" type="button">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nuevo producto
-          </button>
+          <div id="filtrosResumen" class="filtros-resumen" aria-live="polite" hidden></div>
+          <div class="inventory-header-buttons">
+            <button id="btnDelete" class="btn btn-danger-soft" type="button">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+              Eliminar
+            </button>
+            <button id="btnCancelDelete" class="btn btn-ghost" type="button" style="display:none;">Cancelar</button>
+            <button id="btnVoiceAssistant" class="btn btn-ghost" type="button">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5m-4 0h8"/></svg>
+              Asistente IA
+            </button>
+            <button id="btnNew" class="btn btn-primary" type="button">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nuevo producto
+            </button>
+          </div>
         </div>
       </div>
     </header>
@@ -138,15 +151,6 @@
           </div>
         </div>
       </section>
-
-      <!-- Filtros mobile -->
-      <div class="filtros-mobile-toolbar">
-        <button id="btnOpenFiltros" type="button" class="btn-filtros-mobile" aria-label="Abrir filtros" title="Filtros">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h16M7 12h10M10 18h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <span>Filtros</span>
-        </button>
-        <div id="filtrosResumen" class="filtros-resumen" aria-live="polite"></div>
-      </div>
 
       <!-- Filtros desktop -->
       <div class="filters-bar filtros-principales">
@@ -221,6 +225,9 @@
   <div class="modal-box">
     <div class="modal-header">
       <h2 id="modalNewTitle">Nuevo producto</h2>
+      <button id="voiceAssistantReturn" class="btn btn-ghost voice-assistant-return" type="button" hidden>
+        Agregar por Asistente
+      </button>
       <button id="closeModal" class="modal-close" aria-label="Cerrar" type="button">✕</button>
     </div>
 
@@ -290,7 +297,8 @@
 
       <!-- PASO 4 · PRECIO Y STOCK -->
       <div class="step" id="step4">
-        <h3>Precio y stock</h3>
+        <h3>Precio y cantidad</h3>
+        <p class="variant-price-hint">Si ya existe una variante con el mismo precio, la cantidad se suma a su stock. Un precio distinto crea otra variante.</p>
         <div class="precio-general">
           <label for="precioGeneral">Precio general</label>
           <input id="precioGeneral" type="number" placeholder="Precio para todas las tallas">
@@ -328,6 +336,77 @@
   </div>
 </div>
 
+<section id="voiceAssistantPanel" class="voice-assistant-panel" aria-label="Asistente de voz" hidden>
+  <div id="voiceAssistantFull" class="voice-assistant-full">
+    <div class="voice-assistant-floating-header">
+      <button id="voiceAssistantBrand" class="voice-assistant-brand" type="button" aria-label="Ampliar asistente">
+        <span class="voice-assistant-brand-mark" aria-hidden="true">
+          <span class="assistant-orb"><canvas class="assistant-orb-canvas"></canvas></span>
+        </span>
+        <span class="voice-assistant-brand-copy">
+          <strong>Asistente</strong>
+          <span>Inventario por voz</span>
+        </span>
+      </button>
+      <div class="voice-assistant-window-actions">
+        <button id="voiceAssistantCompact" class="btn btn-ghost btn-icon" type="button" aria-label="Vista compacta" aria-pressed="false">□</button>
+        <button id="voiceAssistantMinimize" class="btn btn-ghost btn-icon" type="button" aria-label="Minimizar asistente">−</button>
+        <button id="voiceAssistantClose" class="btn btn-ghost btn-icon" type="button" aria-label="Cerrar conversación">×</button>
+      </div>
+    </div>
+    <div class="voice-assistant-stage">
+      <div id="voiceAssistantVisualizer" class="voice-assistant-visualizer" aria-hidden="true">
+        <span class="assistant-orb"><canvas class="assistant-orb-canvas"></canvas></span>
+        <span class="voice-assistant-orb-ring"></span>
+      </div>
+      <p id="voiceAssistantState" class="voice-assistant-state" aria-live="polite">Conectando…</p>
+    </div>
+    <div id="voiceAssistantMessages" class="voice-assistant-messages" role="log" aria-live="polite"></div>
+    <div id="voiceAssistantSummary" class="voice-assistant-summary" hidden></div>
+    <div class="voice-assistant-actions">
+      <button id="voiceAssistantMute" class="btn btn-primary voice-assistant-mute" type="button" aria-label="Activar micrófono" aria-pressed="false" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"></path>
+          <path d="M5 10a7 7 0 0 0 14 0M12 17v4m-4 0h8"></path>
+          <path class="voice-assistant-mute-slash" d="m5 5 14 14"></path>
+        </svg>
+        <span id="voiceAssistantMuteLabel">Silenciar micrófono</span>
+      </button>
+      <button id="voiceAssistantConfirm" class="btn btn-primary" type="button" disabled><span>Confirmar cambio</span></button>
+      <button id="voiceAssistantCancel" class="btn btn-ghost" type="button" hidden><span>Cancelar cambio</span></button>
+      <button id="voiceAssistantBack" class="btn btn-ghost" type="button" hidden>Crear por formulario</button>
+    </div>
+  </div>
+  <div class="voice-assistant-bubble" hidden>
+    <button id="voiceAssistantExpand" class="voice-assistant-bubble-open" type="button" aria-label="Abrir conversación del asistente">
+      <span class="voice-assistant-bubble-icon" aria-hidden="true">
+        <span class="assistant-orb"><canvas class="assistant-orb-canvas"></canvas></span>
+      </span>
+      <span class="voice-assistant-bubble-copy">
+        <strong>Asistente</strong>
+        <span id="voiceAssistantBubblePreview">Conversación activa</span>
+      </span>
+    </button>
+    <button id="voiceAssistantRestore" class="btn btn-ghost btn-icon" type="button" aria-label="Maximizar asistente" title="Maximizar asistente">□</button>
+    <button id="voiceAssistantBubbleMute" class="btn btn-ghost btn-icon voice-assistant-mute" type="button" aria-label="Silenciar micrófono" aria-pressed="false" title="Silenciar micrófono">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"></path>
+        <path d="M5 10a7 7 0 0 0 14 0M12 17v4m-4 0h8"></path>
+        <path class="voice-assistant-mute-slash" d="m5 5 14 14"></path>
+      </svg>
+    </button>
+    <button id="voiceAssistantBubbleClose" class="btn btn-ghost btn-icon" type="button" aria-label="Cerrar conversación">×</button>
+  </div>
+  <button class="voice-assistant-resize" data-direction="n" type="button" aria-label="Ajustar borde superior"></button>
+  <button class="voice-assistant-resize" data-direction="e" type="button" aria-label="Ajustar borde derecho"></button>
+  <button class="voice-assistant-resize" data-direction="s" type="button" aria-label="Ajustar borde inferior"></button>
+  <button class="voice-assistant-resize" data-direction="w" type="button" aria-label="Ajustar borde izquierdo"></button>
+  <button class="voice-assistant-resize" data-direction="ne" type="button" aria-label="Ajustar esquina superior derecha"></button>
+  <button class="voice-assistant-resize" data-direction="se" type="button" aria-label="Ajustar esquina inferior derecha"></button>
+  <button class="voice-assistant-resize" data-direction="sw" type="button" aria-label="Ajustar esquina inferior izquierda"></button>
+  <button class="voice-assistant-resize" data-direction="nw" type="button" aria-label="Ajustar esquina superior izquierda"></button>
+</section>
+
 <!-- Confirm overlay usado por inventario.js#showConfirm -->
 <div id="confirmOverlay" class="confirm-overlay" aria-hidden="true">
   <div class="confirm-box" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
@@ -343,7 +422,8 @@
 <script src="config.js"></script>
 <script src="theme.js"></script>
 <script src="ui.js"></script>
-<script src="inventario.js"></script>
+<script src="inventario.js?v=voice-panel-1"></script>
+<script src="voice-assistant/voice-assistant.js?v=voice-panel-15"></script>
 <script>
   // Sidebar mobile
   (function () {

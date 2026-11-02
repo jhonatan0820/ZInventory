@@ -1,0 +1,19 @@
+services:
+  inventorio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      PORT: 8080
+      MYSQL_URL: "${MYSQL_URL:?Define MYSQL_URL antes de iniciar Docker Compose}"
+      APP_RESEND_API_KEY: "${APP_RESEND_API_KEY:-}"
+      RESET_BASE_URL: "${RESET_BASE_URL:-http://localhost:8080}"
+      REPORT_COMPANY_NAME: "${REPORT_COMPANY_NAME:-Nombre de la empresa}"
+      REPORT_COMPANY_LOGO: "${REPORT_COMPANY_LOGO:-}"
+      REPORT_COMPANY_ADDRESS: "${REPORT_COMPANY_ADDRESS:-Direccion de la empresa}"
+      REPORT_COMPANY_PHONE: "${REPORT_COMPANY_PHONE:-Numero de celular}"
+    volumes:
+      - ./backend-java/application-secrets.yml:/app/application-secrets.yml:ro
+    restart: unless-stopped

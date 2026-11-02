@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Envio de correos via API HTTP de Resend, equivalente al enviar_correo() del backend Python.
+ * Sends password-recovery emails through the Resend HTTP API.
  * Nunca registra la API key ni el token completo en logs.
  */
 @Service

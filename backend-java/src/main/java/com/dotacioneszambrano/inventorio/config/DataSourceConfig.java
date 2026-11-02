@@ -12,11 +12,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 /**
- * Construye el DataSource replicando la logica de get_connection() del backend Python.
+ * Builds the MySQL DataSource from MYSQL_URL or the external secrets file.
  *
- * Prioridad:
- *   1. Variable de entorno MYSQL_URL en formato Python (mysql://user:pass@host:port/db)
- *   2. spring.datasource.url definido en application-secrets.yml (formato JDBC)
+ * Resolution order: MYSQL_URL, then spring.datasource.url.
  */
 @Configuration
 public class DataSourceConfig {
@@ -45,7 +43,7 @@ public class DataSourceConfig {
                 String[] up = userInfo.split(":", 2);
                 user = up[0];
                 password = up.length > 1 ? up[1] : "";
-                // ssl_disabled=false en Python == useSSL=true + trust store CA.
+                // Require TLS while retaining compatibility with providers without a local CA bundle.
                 url = "jdbc:mysql://" + host + ":" + port + "/" + database
                         + "?useSSL=true&requireSSL=true&verifyServerCertificate=false"
                         + "&connectTimeout=5000&serverTimezone=UTC";
@@ -76,6 +74,7 @@ public class DataSourceConfig {
         ds.setPassword(password);
         ds.setMaximumPoolSize(5);
         ds.setConnectionTimeout(5000);
+        ds.setConnectionInitSql("SET time_zone = '-05:00'");
         ds.setPoolName("InventorioPool");
         return ds;
     }
